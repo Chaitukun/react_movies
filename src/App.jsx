@@ -1,8 +1,48 @@
 import React from 'react'
-import { useState } from 'react'
+import { useState,useEffect } from 'react'
 import Search from './components/Search'
+const API_BASE_URL = 'https://api.themoviedb.org/3';
+
+const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+const API_OPTIONS ={
+  method: 'GET',
+  headers:{
+    accept: 'application/json',
+    Authorization: `Bearer ${API_KEY}`
+  }
+}
 const App = () => {
   const [searchTerm,setSearchTerm] = useState('');
+  const [errorMessage,setErrorMessage] = useState('');
+  const[movieList,setMovieList] = useState([]);
+  const[isLoading,setIsLoading] = useState(false);
+  const fetMovies = async()=>{
+    setIsLoading(true);
+    
+    try {
+      const endpoint = `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
+      
+      const response = await fetch(endpoint,API_OPTIONS);
+      if(!response){
+        throw new Error('Failed to fetch movies');
+      }
+      const data = await response.json();
+      if(data.Response = 'False'){
+        setErrorMessage(data.eror || 'Failed to fetch Movies');
+        setMovieList([]);
+        return;
+      }
+      setMovieList(data.results || [])
+    } catch (error) {
+      console.error(`Error fetching movies:${error}`);
+      setErrorMessage('Error fetching movies.Please try again later')
+    }
+  }
+  useEffect(()=>{
+    fetMovies();
+  },[]);
+
+
   return (
     <main>
       <div className="pattern " />
@@ -12,8 +52,12 @@ const App = () => {
           <h1>
              Find <span className='text-gradient'> Movies </span> you will enjoy without hassle
           </h1>
+          <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm}/>
         </header>
-        <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm}/>
+        <section className='all-movies'>
+          <h2>All MOvies</h2>
+          {errorMessage && <p className='text-red-500'>{errorMessage}</p> }
+        </section>
         <h1 className="text-white">{searchTerm}</h1>
         </div>
     </main>
